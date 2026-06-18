@@ -1,8 +1,3 @@
-// Display com alerta
-// Diego Cruz 02/2026
-// Esp8266 + lcd 16x2 com i2c + buzzer + botão led (diy).
-// Arduino IDE 2 - NodeMCU 1.0 (ESP12E)
-
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <Wire.h>
@@ -18,7 +13,7 @@
 #define btnN 14
 #define buzz 0
 
-#define timeOutAlert 2
+#define timeOutAlert 4
 
 // LCD
 LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
@@ -47,6 +42,11 @@ PubSubClient client(espClient);
 unsigned long previousMillis = 0;
 const long interval = 5000;
 byte alertTimeOut = timeOutAlert;
+
+const long intervalFix = 200;
+bool msgFix = false;
+String lastTime = "                              ";
+String lastMsgFix = "                              ";
 
 void publishDiscovery() {
   // Pergunta
@@ -78,6 +78,21 @@ void publishDiscovery() {
 void showTime(String text) {
   lcd.clear();
   lcd.noBacklight();
+
+  // Linha 1
+  lcd.setCursor(0, 0);
+  lcd.print(text.substring(0, 16));
+
+  // Linha 2
+  if (text.length() > 16) {
+    lcd.setCursor(0, 1);
+    lcd.print(text.substring(16, 32));
+  }
+}
+
+void showLCD(String text) {
+  lcd.backlight();
+  lcd.clear();
 
   // Linha 1
   lcd.setCursor(0, 0);
@@ -137,7 +152,17 @@ void showOnLCD(String text) {
     } else {
       loopOK(false);
     }
-  } 
+  } else if (last == '.') {
+    lastMsgFix = text;
+    msgFix = true;
+    if(alert == '.') {
+      callAlert();
+      delay(100);
+      callAlert();
+      delay(100);
+      callAlert();
+    }
+  }
   
 }
 
@@ -151,7 +176,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 
   if (String(topic) == topic_time) {
-    showTime(text);
+    lastTime = text;
+    if (!msgFix) {
+      showTime(text);
+    }
   }
 }
 
@@ -223,6 +251,10 @@ void loopYN(bool alert) {
       break;
     }
   }
+
+  if(msgFix) {
+    showLCD(lastMsgFix);
+  }
 }
 
 void loopOK(bool alert) {
@@ -249,20 +281,24 @@ void loopOK(bool alert) {
     if (digitalRead(btnS) == LOW) {
       digitalWrite(ledS, LOW);
       digitalWrite(ledN, LOW);
-     
       enviarResposta("OK");
+      break;
     }
+  }
+
+  if(msgFix) {
+    showLCD(lastMsgFix);
   }
 }
 
 void callAlert() {
-  for(byte x=0; x<10; x++) {  
+  for(byte x=0; x<6; x++) {  
     lcd.backlight();
     digitalWrite(buzz, HIGH);
-    delay(100);
+    delay(50);
     lcd.noBacklight();
     digitalWrite(buzz, LOW);
-    delay(100);
+    delay(50);
   }
   lcd.backlight();
 }
@@ -310,4 +346,19 @@ void loop() {
   client.loop();
   yield();
   delay(10);
+
+  if (msgFix) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= intervalFix) {
+      previousMillis = currentMillis;
+      digitalWrite(ledS, !digitalRead(ledS));
+    }
+  
+    if (digitalRead(btnS) == LOW) {
+      msgFix = false;
+      digitalWrite(ledS, LOW);
+      showTime(lastTime);
+    }
+  }
+
 }
