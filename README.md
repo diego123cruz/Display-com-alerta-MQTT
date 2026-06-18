@@ -11,6 +11,13 @@ Comandos (Final da frase):
   
   "!!" -> Comando de Ação, com alerta sonoro. Respostas (OK). Ex: "Vai tomar banho!!"
 
+  "." -> Lembrete, sem alerta sonoro. Sem resposta. Ex: "Reuniao as 15h."
+  
+  ".." -> Lembrete, com alerta sonoro. Sem resposta. Ex: "Reuniao as 16h.."
+
+  Obs [lembrete]: Quando tem um lembrete na tela e chega um alerta, ex: "Hora de sair!", apos o alerta terminar o lembrete volta a aparecer até que seja excluido.
+  
+
   A cada 5 segundos, quando tem alerta sonoro, o som se repete por 3 vezes, apos isso, retorna automaticante uma msg "AUSENTE" e volta para o relogio.
 
   Se nâo tem alerta sonoro, conta o tempo 5 segundo por 3 vezes e retorna automaticante uma msg "AUSENTE" e volta para o relogio. 
